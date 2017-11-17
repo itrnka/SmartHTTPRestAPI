@@ -1,5 +1,5 @@
 # SmartHTTPRestAPI
-Rest API handling for `ha` framework. Routing and controller abstraction by ha framework stabdards. Currently is supported only JSON body in requests and responses.
+Rest API handling for `ha` framework. Package includes routes and controllers by ha framework standards. Currently is supported only JSON body in requests and responses.
 
 ## How it works
 For Rest API functionionality is required only one route, which is appended to ha router. This route is instance of `ha\SmartHTTPRestAPI\JSON\JSONRestAPIRoute` and maps requests by URL to required controllers.
@@ -7,9 +7,8 @@ For Rest API functionionality is required only one route, which is appended to h
 Required area of functionality (product handling, category handling, ...) represent one controller, which implements `ha\SmartHTTPRestAPI\JSON\JSONRestAPIController`. All, what is needed, is add the controller into JSONRestAPIRoute route. This controller must implement `ha\SmartHTTPRestAPI\JSON\JSONRestAPIController` or must be extended from `ha\SmartHTTPRestAPI\JSON\AbstractJSONRestAPIController` (this abstract provides default required functionality for Rest API).
 
 
-
 ### interface JSONRestAPIController
-Associated route automatically maps request to these methods in controllers (every controller must implement interface):
+Associated route automatically maps matched request to these methods in controllers (every controller must implement interface):
 
 ```
 interface JSONRestAPIController

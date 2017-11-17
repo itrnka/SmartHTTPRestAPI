@@ -1,0 +1,33 @@
+{
+    "name": "itrnka/ha-smart-http-rest-api",
+    "description": "Rest API handling for `ha` framework. Package includes routes and controllers by ha framework standards. Currently is supported only JSON body in requests and responses.",
+    "type": "library",
+    "keywords": [
+        "ha",
+        "JSON",
+        "Rest API",
+        "routing",
+        "route",
+        "controller"
+    ],
+    "homepage": "https://github.com/itrnka/SmartHTTPRestAPI",
+    "time": "2017-11-15",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "itrnka",
+            "email": "tic@tic.sk",
+            "role": "Developer"
+        }
+    ],
+    "support": {},
+    "require": {
+        "php": "^7.1",
+        "itrnka/ha-framework": "^1.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "ha\\SmartHTTPRestAPI\\": "src/SmartHTTPRestAPI"
+        }
+    }
+}
