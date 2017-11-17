@@ -14,9 +14,6 @@ class JSONRestAPIRoute extends HTTPRouteDefaultAbstract implements HTTPRoute
      */
     protected $allowedURLRegexp;
 
-    /** @var JSONRestAPIController[] */
-    protected $controllerHashMap = [];
-
     /** @var JSONRestAPIController Controller instance initialized by self::bootstrap(). */
     protected $controller;
 
@@ -26,54 +23,17 @@ class JSONRestAPIRoute extends HTTPRouteDefaultAbstract implements HTTPRoute
     /** @var array Arguments for action in controller. */
     protected $controllerActionArgs;
 
-    /**
-     * Determine whether Route accepts mime type from Request headers.
-     *
-     * @return bool
-     */
-    public function checkAcceptRequestHeader() : bool
-    {
-        foreach ($this->request->getAccept() AS $mime) {
-            if (strcasecmp('application/json', $mime) === 0) {
-                return true;
-            }
-        }
-        return false;
-    }
+    /** @var JSONRestAPIController[] */
+    protected $controllerHashMap = [];
 
-    /**
-     * Determine whether Route supports content type from Request headers.
-     *
-     * @return bool
-     */
-    public function checkContentTypeRequestHeader() : bool
-    {
-        if ($this->request->typeof('get')) {
-            return true;
-        }
-        if (strcasecmp('application/json', $this->request->getContentType()) === 0) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Add controller to route.
-     *
-     * @param string $URIControllerId
-     * @param JSONRestAPIController $controller
-     */
-    public function addController(string $URIControllerId, JSONRestAPIController $controller): void
-    {
-        $this->controllerHashMap[$URIControllerId] = $controller;
-    }
+    /** @var string[] Extra headers for every response, e.g. ORIGIN headers, etc. */
+    protected $extraHeaders = [];
 
     /**
      * Determine whether this route is compatible with URL. If false, router skips this route.
-     *
      * @return bool
      */
-    public function URLIsCompatible() : bool
+    public function URLIsCompatible(): bool
     {
         // if regexp is not defined
         if (!isset($this->allowedURLRegexp)) {
@@ -81,12 +41,15 @@ class JSONRestAPIRoute extends HTTPRouteDefaultAbstract implements HTTPRoute
         }
 
         // test URL and required parts
-        $fullURL = $this->request->getUrl()->scheme . '://' . $this->request->getUrl()->host . $this->request->getUrl()->path;
+        $fullURL = $this->request->getUrl()->scheme . '://' . $this->request->getUrl()->host . $this->request->getUrl(
+            )->path;
         if (!preg_match($this->allowedURLRegexp, $fullURL, $matches)) {
             return false;
         }
         #ddd($matches);
-        if (!isset($matches['controller']) || !isset($matches['id']) || !isset($matches['project']) || !isset($this->controllerHashMap["{$matches['project']}-{$matches['controller']}"])) {
+        if (!isset($matches['controller']) || !isset($matches['id']) || !isset($matches['project'])
+            || !isset($this->controllerHashMap["{$matches['project']}-{$matches['controller']}"])
+        ) {
             return false;
         }
 
@@ -113,7 +76,8 @@ class JSONRestAPIRoute extends HTTPRouteDefaultAbstract implements HTTPRoute
             if ($this->request->typeof('DELETE')) {
                 $this->controllerAction = 'deleteItem';
             }
-        } else {
+        }
+        else {
             $this->allowedRequestMethods = ['GET', 'POST', 'PUT', 'DELETE'];
             $this->controllerActionArgs = [$project];
             if ($this->request->typeof('get')) {
@@ -134,10 +98,63 @@ class JSONRestAPIRoute extends HTTPRouteDefaultAbstract implements HTTPRoute
     }
 
     /**
-     * Setup response headers and body by your controller or other logic.
-     *
+     * Determine whether Route accepts mime type from Request headers.
+     * @return bool
      */
-    public function prepareResponse() : void
+    public function checkAcceptRequestHeader(): bool
+    {
+        foreach ($this->request->getAccept() AS $mime) {
+            if (strcasecmp('application/json', $mime) === 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Determine whether Route supports content type from Request headers.
+     * @return bool
+     */
+    public function checkContentTypeRequestHeader(): bool
+    {
+        if ($this->request->typeof('get')) {
+            return true;
+        }
+        if (strcasecmp('application/json', $this->request->getContentType()) === 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Determine whether Route supports request method.
+     * @return bool
+     */
+    public function checkRequestMethod(): bool
+    {
+        foreach ($this->getAllowedRequestMethods() AS $method) {
+            if ($this->request->typeof($method)) {
+                return true;
+                break;
+            }
+            unset($method);
+        }
+        return false;
+    }
+
+    /**
+     * Get collection of allowed request methods for this route URL. It is very important for handling HTTP405 error.
+     * @return array
+     */
+    public function getAllowedRequestMethods(): array
+    {
+        return $this->allowedRequestMethods;
+    }
+
+    /**
+     * Setup response headers and body by your controller or other logic.
+     */
+    public function prepareResponse(): void
     {
         try {
             call_user_func_array([$this->controller, $this->controllerAction], $this->controllerActionArgs);
@@ -156,34 +173,39 @@ class JSONRestAPIRoute extends HTTPRouteDefaultAbstract implements HTTPRoute
             ];
             $this->response->setBody(json_encode($data));
         }
-    }
-
-    /**
-     * Determine whether Route supports request method.
-     *
-     * @return bool
-     */
-    public function checkRequestMethod() : bool
-    {
-        foreach ($this->getAllowedRequestMethods() AS $method) {
-            if ($this->request->typeof($method)) {
-                return true;
-                break;
-            }
-            unset($method);
+        foreach ($this->extraHeaders AS $header) {
+            $this->response->addHeader($header);
         }
-        return false;
     }
 
+    /**
+     * Add controller to route.
+     *
+     * @param string $URIControllerId
+     * @param JSONRestAPIController $controller
+     */
+    public function addController(string $URIControllerId, JSONRestAPIController $controller): void
+    {
+        $this->controllerHashMap[$URIControllerId] = $controller;
+    }
 
     /**
-     * Get collection of allowed request methods for this route URL. It is very important for handling HTTP405 error.
+     * Set extra headers for every request, e.g. ORIGIN headers, etc.
      *
-     * @return array
+     * @param string[] $headers
+     *
+     * @throws \TypeError
      */
-    public function getAllowedRequestMethods() : array
+    public function setExtraHeaders(array $headers): void
     {
-        return $this->allowedRequestMethods;
+        foreach ($headers AS $header) {
+            if (is_string($header)) {
+                $this->extraHeaders[] = $header;
+            }
+            else {
+                throw new \TypeError("Header must be s string value");
+            }
+        }
     }
 
 }
