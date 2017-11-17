@@ -10,7 +10,7 @@ Required area of functionality (product handling, category handling, ...) repres
 ### interface JSONRestAPIController
 Associated route automatically maps matched request to these methods in controllers (every controller must implement interface):
 
-```
+```php
 interface JSONRestAPIController
 {
     /**
