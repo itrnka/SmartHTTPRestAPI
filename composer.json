@@ -3,6 +3,7 @@
     "description": "Rest API handling for `ha` framework. Package includes routes and controllers by ha framework standards. Currently is supported only JSON body in requests and responses.",
     "type": "library",
     "keywords": [
+        "ha-framework",
         "ha",
         "JSON",
         "Rest API",
